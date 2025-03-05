@@ -1,4 +1,5 @@
-﻿using Unity.Burst;
+﻿using Plugins.Collections;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -46,7 +47,7 @@ namespace Game.Utility
         }
 
         [BurstCompile]
-        public static void Raycast(in UnsafeList<byte> cubes, in byte collision, in int3 size, in float3 position, in float3 origin, in float3 direction, out int3 hit, out int3 normal, out bool res)
+        public static void Raycast(in UnsafeArray<int> cubes, in int collision, in int3 size, in float3 position, in float3 origin, in float3 direction, out int3 hit, out int3 normal, out bool res)
         {
             float3 orig = origin;
             orig -= position;
@@ -54,7 +55,7 @@ namespace Game.Utility
         }
 
         [BurstCompile]
-        public static void Raycast(in UnsafeList<byte> cubes, in byte collision, in int3 size, in float3 position, in quaternion rotation, in float3 origin, in float3 direction, out int3 hit, out int3 normal, out bool res)
+        public static void Raycast(in UnsafeArray<int> cubes, in int collision, in int3 size, in float3 position, in quaternion rotation, in float3 origin, in float3 direction, out int3 hit, out int3 normal, out bool res)
         {
             float3 orig = origin;
             float3 dir = direction;
@@ -87,7 +88,7 @@ namespace Game.Utility
         }
 
         [BurstCompile]
-        public static void Raycast(in UnsafeList<byte> cubes, in byte collision, in int3 size, in float3 origin, in float3 direction, out int3 hit, out int3 normal, out bool res)
+        public static void Raycast(in UnsafeArray<int> cubes, in int collision, in int3 size, in float3 origin, in float3 direction, out int3 hit, out int3 normal, out bool res)
         {
             const float offset_value = 0.01f;
 
@@ -198,10 +199,10 @@ namespace Game.Utility
         }
 
         [BurstCompile]
-        private static void HasCube(in UnsafeList<byte> cubes, in int collision, in int3 size, in int3 position, out bool res)
+        private static void HasCube(in UnsafeArray<int> cubes, in int collision, in int3 size, in int3 position, out bool res)
         {
             ToIndex(position, size, out int index);
-            res = cubes[index] >= collision;
+            res = collision == (collision | (1 << cubes[index]));
         }
 
         [BurstCompile]

@@ -4,6 +4,7 @@ using Unity.Collections;
 using Unity.Transforms;
 using Unity.Burst;
 using Unity.Jobs;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace Game.ECS
 {
@@ -82,6 +83,7 @@ namespace Game.ECS
         {
             [ReadOnly]
             public ComponentLookup<LocalToWorld> localToWorldLookup;
+            [NativeDisableContainerSafetyRestriction]
             [ReadOnly]
             public ComponentLookup<CubeGroup> cubeGroupLookup;
 
@@ -125,6 +127,7 @@ namespace Game.ECS
         {
             [ReadOnly]
             public ComponentLookup<LocalToWorld> localToWorldLookup;
+            [NativeDisableContainerSafetyRestriction]
             [ReadOnly]
             public ComponentLookup<CubeGroup> cubeGroupLookup;
 

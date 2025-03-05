@@ -6,6 +6,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Burst;
 using System;
 using Game.Utility;
+using Plugins.Collections;
 
 namespace Game.ECS
 {
@@ -32,8 +33,12 @@ namespace Game.ECS
     [ChunkSerializable]
     public struct CubeGroup : IComponentData, IDisposable
     {
-        private const byte PART_COLLISION = 1;
-        private const byte FULL_COLLISION = 2;
+        private const int PART_COLLISION = 1;
+        private const int FULL_COLLISION = 2;
+
+        private const int PART_COLLISION_MASK = 1 << PART_COLLISION;
+        private const int ALL_COLLISION_MASK = 1 << PART_COLLISION | 1 << FULL_COLLISION;
+
 
         public int3 size;
 
@@ -42,11 +47,10 @@ namespace Game.ECS
         public bool IsEmpty => entities.IsCreated == false && collisions.IsCreated == false;
 
         [NoAlias]
-        private UnsafeList<Entity> entities;
+        private UnsafeArray<Entity> entities;
         [NoAlias]
-        private UnsafeList<byte> collisions;
+        private UnsafeArray<int> collisions;
 
-        ///TODO: replace collisions unsafe list to custom unsafe array
         public void Init()
         {
             if (!IsEmpty)
@@ -54,20 +58,19 @@ namespace Game.ECS
 
             int lenght = Lenght;
 
-            entities = new UnsafeList<Entity>(lenght, Allocator.Persistent);
-            for (int i = 0; i < lenght; i++)
-                entities.Add(default);
+            entities = new UnsafeArray<Entity>(lenght, Allocator.Persistent);
 
-            collisions = new UnsafeList<byte>(lenght, Allocator.Persistent);
-            for (int i = 0; i < lenght; i++)
-                collisions.Add(default);
+            collisions = new UnsafeArray<int>(lenght, Allocator.Persistent);
         }
+
+        [BurstCompile]
         public void Raycast(in float3 position, in quaternion rotation, in float3 origin, in float3 direction, out int3 hit, out int3 normal, out bool res, bool isFullCollision = true)
         {
-            CubeUtility.Raycast(collisions, isFullCollision ? FULL_COLLISION : PART_COLLISION, size, position, rotation,
+            CubeUtility.Raycast(collisions, isFullCollision ? ALL_COLLISION_MASK : PART_COLLISION_MASK, size, position, rotation,
                 origin, direction, out hit, out normal, out res);
         }
 
+        [BurstCompile]
         public void GetIndex(int3 position, out int res)
         {
             IsRange(position, out bool isRange);
@@ -77,23 +80,27 @@ namespace Game.ECS
                 res = -1;
         }
 
+        [BurstCompile]
         public void SetEntity(int index, Entity entity, bool isFullCollision)
         {
             entities[index] = entity;
             collisions[index] = isFullCollision ? FULL_COLLISION : PART_COLLISION;
         }
 
+        [BurstCompile]
         public void RemoveEntity(int index)
         {
             entities[index] = default;
             collisions[index] = 0;
         }
 
+        [BurstCompile]
         public void GetEntity(int index, out Entity res)
         {
             res = entities[index];
         }
 
+        [BurstCompile]
         public void GetEntity(int3 position, out Entity res)
         {
             GetIndex(position, out int index);
@@ -103,6 +110,7 @@ namespace Game.ECS
                 res = default;
         }
 
+        [BurstCompile]
         public void GetNotFullCollision(ref int3 position, in int3 normal)
         {
             IsRange(position + normal, out bool isRange);
@@ -117,25 +125,29 @@ namespace Game.ECS
             }
         }
 
-        public void HasCollision(in int index, out bool res, int collision = PART_COLLISION)
+        [BurstCompile]
+        public void HasCollision(in int index, out bool res)
         {
-            res = collisions[index] >= collision;
+            res = collisions[index] != 0;
         }
 
-        public void HasCollision(int3 position, out bool res, int collision = PART_COLLISION)
+        [BurstCompile]
+        public void HasCollision(in int3 position, out bool res)
         {
             GetIndex(position, out int index);
             if (index >= 0)
-                HasCollision(index, out res, collision);
+                HasCollision(index, out res);
             else
                 res = false;
         }
 
+        [BurstCompile]
         public void HasEntity(int index, out bool res)
         {
             res = entities[index] != Entity.Null;
         }
 
+        [BurstCompile]
         public void HasEntity(int3 position, out bool res)
         {
             GetIndex(position, out int index);
